@@ -1,0 +1,35 @@
+{
+  "name": "travel-museum",
+  "version": "1.0.0",
+  "description": "个人线上博物馆：陈列旅行照片（Node.js + Express + JSON 文件存储）",
+  "main": "server/index.js",
+  "bin": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "build:exe": "pkg . --out-path dist --targets node18-win-x64"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "pkg": {
+    "scripts": "server/**/*.js",
+    "assets": [
+      "public/**/*"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ],
+    "outputPath": "dist"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  }
+}

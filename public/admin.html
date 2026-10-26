@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>管理后台 · 旅行博物馆</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 登录界面 -->
+  <div id="login" class="admin-login" style="display:none">
+    <h1 class="site-title" style="font-size:30px">管理后台</h1>
+    <p class="muted-note">请输入管理员密码</p>
+    <form id="loginForm">
+      <div class="form-field"><input type="password" id="loginPw" placeholder="密码" autocomplete="current-password" required></div>
+      <button class="btn" type="submit">登录</button>
+      <div id="loginErr" style="color:#a23b3b;font-size:13px;margin-top:10px"></div>
+    </form>
+    <p style="margin-top:24px"><a class="btn ghost small" href="index.html">返回首页</a></p>
+  </div>
+
+  <!-- 管理主界面 -->
+  <div id="app" class="admin-wrap" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h1 class="site-title" style="font-size:26px;text-align:left">管理后台</h1>
+      <button class="btn ghost small" onclick="logout()">退出</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="sections" onclick="switchTab('sections')">展区管理</div>
+      <div class="tab" data-tab="photos" onclick="switchTab('photos')">照片管理</div>
+    </div>
+
+    <!-- 展区管理 -->
+    <div id="panel-sections" class="panel active">
+      <button class="btn" id="newSectionBtn">+ 新建展区</button>
+      <div id="sectionList" style="margin-top:20px"></div>
+
+      <form id="secForm" style="display:none;margin-top:24px;border:1px solid var(--line);padding:20px;border-radius:4px;background:#fff">
+        <h3 id="secFormTitle">新建展区</h3>
+        <div class="form-field"><label>标题 *</label><input name="title" id="f_title" required></div>
+        <div class="form-field"><label>目的地</label><input name="location" id="f_location"></div>
+        <div class="form-field"><label>年份</label><input name="year" id="f_year"></div>
+        <div class="form-field"><label>简介</label><textarea name="description" id="f_desc" rows="3"></textarea></div>
+        <div class="form-field"><label>封面图</label><input type="file" name="cover" id="f_cover" accept="image/*"></div>
+        <div class="form-field"><label>排序（数字越小越靠前）</label><input type="number" name="sort_order" id="f_sort" value="0"></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn" type="submit">保存</button>
+          <button class="btn ghost" type="button" id="secCancel">取消</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 照片管理 -->
+    <div id="panel-photos" class="panel">
+      <p class="muted-note">当前展区：<span id="photoSecName" style="color:var(--ink);font-weight:500"></span></p>
+      <button class="btn" id="newPhotoBtn">+ 上传照片</button>
+      <div id="photoList" style="margin-top:20px"></div>
+
+      <form id="phForm" style="display:none;margin-top:24px;border:1px solid var(--line);padding:20px;border-radius:4px;background:#fff">
+        <h3 id="phFormTitle">上传照片</h3>
+        <div class="form-field"><label>图片 *</label><input type="file" name="image" accept="image/*" id="p_image"></div>
+        <div class="form-field"><label>标题</label><input name="title" id="p_title"></div>
+        <div class="form-field"><label>拍摄地点</label><input name="location" id="p_location"></div>
+        <div class="form-field"><label>拍摄日期</label><input type="date" name="shot_date" id="p_date"></div>
+        <div class="form-field"><label>描述</label><textarea name="description" id="p_desc" rows="3"></textarea></div>
+        <div class="form-field"><label>排序（数字越小越靠前）</label><input type="number" name="sort_order" id="p_sort" value="0"></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn" type="submit">保存</button>
+          <button class="btn ghost" type="button" id="phCancel">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

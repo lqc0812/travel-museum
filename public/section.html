@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>展区 · 旅行博物馆</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="section-header">
+    <a class="back-link" href="index.html">← 返回展厅</a>
+    <h1 class="section-title" id="secTitle"></h1>
+    <div class="section-meta" id="secMeta"></div>
+  </header>
+
+  <main class="container">
+    <div class="photo-grid" id="grid"></div>
+  </main>
+
+  <footer class="site-footer">
+    <div><a class="admin-link" href="admin.html">管理入口</a></div>
+  </footer>
+
+  <!-- 大图灯箱 -->
+  <div class="lightbox" id="lb">
+    <button class="lb-close" id="lbClose" aria-label="关闭">×</button>
+    <button class="lb-prev" id="lbPrev" aria-label="上一张">‹</button>
+    <button class="lb-next" id="lbNext" aria-label="下一张">›</button>
+    <img id="lbImg" src="" alt="">
+    <div class="lb-caption">
+      <div class="t" id="lbTitle"></div>
+      <div class="m" id="lbMeta"></div>
+    </div>
+  </div>
+
+  <script src="js/section.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>我的旅行博物馆</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1 class="site-title">我的旅行博物馆</h1>
+    <div class="site-subtitle">A Personal Museum of Journeys</div>
+  </header>
+
+  <main class="container">
+    <div class="halls" id="halls"></div>
+  </main>
+
+  <footer class="site-footer">
+    <div>© <span id="year"></span> 我的旅行博物馆 · 影像收藏</div>
+    <div style="margin-top:8px"><a class="admin-link" href="admin.html">管理入口</a></div>
+  </footer>
+
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script src="js/home.js"></script>
+</body>
+</html>

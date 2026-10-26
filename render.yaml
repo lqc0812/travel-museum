@@ -1,0 +1,33 @@
+# Render 一键部署配置（Web Service）
+# 在 Render 新建 "Blueprint" 或 "Web Service" 时上传本仓库即可识别
+#
+# 持久化说明：本应用使用 Cloudflare R2 作为外部存储（图片 + 数据 JSON），
+# 因此 Render 免费档也能持久保存，无需挂载持久磁盘（免费档本身不支持磁盘）。
+# 部署后在 Render 控制台填入以下 R2_* 环境变量即可。
+services:
+  - type: web
+    name: travel-museum
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/sections
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_PASSWORD
+        sync: false          # 部署后在控制台手动填写（你的管理密码）
+      - key: JWT_SECRET
+        sync: false          # 部署后在控制台手动填写（一段随机长字符串）
+      - key: PORT
+        value: 10000
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
