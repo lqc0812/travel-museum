@@ -11,7 +11,7 @@ function decodeDataUrl(dataUrl) {
   if (!m) throw new Error('图片格式无效');
   const ext = (m[1].split('/')[1] || 'png').replace(/[^a-z0-9]/gi, '') || 'png';
   const buf = Buffer.from(m[2], 'base64');
-  if (buf.length > 15 * 1024 * 1024) throw new Error('文件过大（最大 15MB）');
+  if (buf.length > 25 * 1024 * 1024) throw new Error('文件过大（最大 25MB）');
   return { ext, buf };
 }
 

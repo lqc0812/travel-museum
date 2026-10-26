@@ -8,6 +8,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .upload-zone{border:2px dashed var(--line);border-radius:10px;padding:34px 20px;text-align:center;cursor:pointer;background:#faf9f6;transition:.15s;margin-top:14px}
+    .upload-zone:hover{background:#f3f1ea}
+    .upload-zone.drag{border-color:var(--accent);background:#efe9dc}
+    .uz-icon{font-size:36px;line-height:1}
+    .uz-main{margin:10px 0 4px;font-size:15px;color:var(--ink)}
+    .upload-status{margin-top:12px;font-size:13px;color:var(--accent);min-height:18px}
+  </style>
 </head>
 <body>
   <!-- 登录界面 -->
@@ -56,13 +64,24 @@
 
     <!-- 照片管理 -->
     <div id="panel-photos" class="panel">
-      <p class="muted-note">当前展区：<span id="photoSecName" style="color:var(--ink);font-weight:500"></span></p>
-      <button class="btn" id="newPhotoBtn">+ 上传照片</button>
+      <div class="form-field">
+        <label>选择要管理的展区</label>
+        <select id="sectionPicker"><option value="">— 请选择展区 —</option></select>
+      </div>
+
+      <div id="uploadZone" class="upload-zone">
+        <div class="uz-icon">📷</div>
+        <p class="uz-main">点击选择照片，或把照片（可多选）拖到这里</p>
+        <p class="muted-note">照片会直接上传到上方所选展区 · 自动压缩 · 无需填表</p>
+        <input type="file" id="p_images" accept="image/*" multiple hidden>
+      </div>
+      <div id="uploadStatus" class="upload-status"></div>
+
       <div id="photoList" style="margin-top:20px"></div>
 
       <form id="phForm" style="display:none;margin-top:24px;border:1px solid var(--line);padding:20px;border-radius:4px;background:#fff">
-        <h3 id="phFormTitle">上传照片</h3>
-        <div class="form-field"><label>图片 *</label><input type="file" name="image" accept="image/*" id="p_image"></div>
+        <h3 id="phFormTitle">编辑照片信息</h3>
+        <div class="form-field"><label>替换图片（可选）</label><input type="file" name="image" accept="image/*" id="p_image"></div>
         <div class="form-field"><label>标题</label><input name="title" id="p_title"></div>
         <div class="form-field"><label>拍摄地点</label><input name="location" id="p_location"></div>
         <div class="form-field"><label>拍摄日期</label><input type="date" name="shot_date" id="p_date"></div>

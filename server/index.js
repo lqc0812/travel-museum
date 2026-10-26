@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3000;
 fs.mkdirSync(uploadsDir, { recursive: true });
 
 // 静态资源：前端页面 + 本地上传的图片；JSON 请求体上限放宽以容纳 base64 图片
-app.use(express.json({ limit: '25mb' }));
+app.use(express.json({ limit: '50mb' }));
 app.use('/uploads', express.static(uploadsDir));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 

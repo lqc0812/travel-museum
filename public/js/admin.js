@@ -2,7 +2,7 @@ const api = '/api';
 const TOKEN_KEY = 'museum_admin_token';
 
 let sections = [];
-let photoSectionId = null;
+let photoSectionId = null;   // 当前正在管理照片的展区 id
 let activeSectionId = null;   // 正在编辑的展区 id（null = 新建）
 let activePhotoId = null;     // 正在编辑的照片 id（null = 新建）
 
@@ -24,11 +24,27 @@ async function apiFetch(url, opts = {}) {
 
 function logout() { setToken(''); location.reload(); }
 
-// 把本地图片文件读成 base64 data URL（避免打包后 multipart 上传的兼容问题）
-function fileToDataUrl(file) {
+// 读取图片并压缩：最长边缩放到 maxEdge，输出 JPEG（体积小、上传快、避免超限）
+function fileToDataUrl(file, maxEdge = 2000, quality = 0.85) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('图片解码失败'));
+      img.src = reader.result;
+    };
     reader.onerror = () => reject(new Error('图片读取失败'));
     reader.readAsDataURL(file);
   });
@@ -74,7 +90,7 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
-  if (name === 'sections') loadSections();
+  if (name === 'photos') { populatePicker(); if (photoSectionId) loadPhotos(photoSectionId); }
 }
 
 /* ===== 展区管理 ===== */
@@ -82,6 +98,7 @@ async function loadSections() {
   const r = await apiFetch(`${api}/sections`);
   sections = await r.json();
   renderSections();
+  populatePicker();
 }
 function renderSections() {
   const el = document.getElementById('sectionList');
@@ -147,21 +164,35 @@ async function delSection(id) {
 
 /* ===== 照片管理 ===== */
 let photos = [];
+function populatePicker() {
+  const sel = document.getElementById('sectionPicker');
+  if (!sel) return;
+  const cur = photoSectionId;
+  sel.innerHTML = '<option value="">— 请选择展区 —</option>' +
+    sections.map(s => `<option value="${s.id}">${esc(s.title)}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+document.getElementById('sectionPicker').addEventListener('change', e => {
+  photoSectionId = e.target.value ? Number(e.target.value) : null;
+  if (photoSectionId) loadPhotos(photoSectionId);
+  else document.getElementById('photoList').innerHTML = '';
+});
+
 async function openPhotos(sectionId) {
   photoSectionId = sectionId;
+  const sel = document.getElementById('sectionPicker');
+  if (sel) sel.value = sectionId;
   switchTab('photos');
   await loadPhotos(sectionId);
 }
 async function loadPhotos(sectionId) {
-  const sec = sections.find(s => s.id === sectionId);
-  document.getElementById('photoSecName').textContent = sec ? sec.title : '';
   const r = await apiFetch(`${api}/sections/${sectionId}/photos`);
   photos = await r.json();
   renderPhotos();
 }
 function renderPhotos() {
   const el = document.getElementById('photoList');
-  if (!photos.length) { el.innerHTML = '<div class="muted-note">该展区还没有照片。</div>'; return; }
+  if (!photos.length) { el.innerHTML = '<div class="muted-note">该展区还没有照片，拖几张进来吧。</div>'; return; }
   el.innerHTML = photos.map(p => `
     <div class="card-row">
       <img src="${p.image_path}" onerror="this.style.visibility='hidden'">
@@ -174,9 +205,62 @@ function renderPhotos() {
   el.querySelectorAll('[data-editp]').forEach(b => b.onclick = () => editPhoto(+b.dataset.editp));
   el.querySelectorAll('[data-delp]').forEach(b => b.onclick = () => delPhoto(+b.dataset.delp));
 }
+
+// ===== 拖拽 / 多选直接上传 =====
+function setupUploadZone() {
+  const zone = document.getElementById('uploadZone');
+  const input = document.getElementById('p_images');
+  if (!zone || !input) return;
+  zone.addEventListener('click', () => {
+    if (!photoSectionId) { alert('请先在上方「选择要管理的展区」'); return; }
+    input.click();
+  });
+  input.addEventListener('change', e => { handleFiles(e.target.files); input.value = ''; });
+  ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('drag'); }));
+  ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('drag'); }));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    if (!photoSectionId) { alert('请先选好要上传到哪个展区'); return; }
+    handleFiles(e.dataTransfer.files);
+  });
+}
+
+let uploading = 0;
+async function handleFiles(files) {
+  const arr = Array.from(files || []).filter(f => f.type.startsWith('image/'));
+  if (!arr.length) { alert('请选择图片文件'); return; }
+  if (!photoSectionId) { alert('请先在上方选择展区'); return; }
+  const statusEl = document.getElementById('uploadStatus');
+  let ok = 0, fail = 0;
+  for (let i = 0; i < arr.length; i++) {
+    const file = arr[i];
+    uploading++;
+    statusEl.textContent = `正在上传 ${i + 1}/${arr.length}：${file.name}`;
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const title = file.name.replace(/\.[^.]+$/, '');
+      const r = await apiFetch(`${api}/sections/${photoSectionId}/photos`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, image: dataUrl })
+      });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || '上传失败'); }
+      ok++;
+    } catch (err) {
+      fail++;
+      console.error(err);
+      alert(`「${file.name}」上传失败：${err.message}`);
+    } finally {
+      uploading--;
+    }
+  }
+  statusEl.textContent = uploading === 0 ? `完成：成功 ${ok} 张${fail ? `，失败 ${fail} 张` : ''}` : '';
+  loadPhotos(photoSectionId);
+}
+
+/* ===== 编辑照片信息（可选替换图片） ===== */
 function showPhotoForm(photo = null) {
   activePhotoId = photo ? photo.id : null;
-  document.getElementById('phFormTitle').textContent = photo ? '编辑照片' : '上传照片';
+  document.getElementById('phFormTitle').textContent = photo ? '编辑照片信息' : '上传照片';
   document.getElementById('p_title').value = photo ? (photo.title || '') : '';
   document.getElementById('p_location').value = photo ? (photo.location || '') : '';
   document.getElementById('p_date').value = photo ? (photo.shot_date || '') : '';
@@ -187,17 +271,12 @@ function showPhotoForm(photo = null) {
 }
 function hidePhotoForm() { document.getElementById('phForm').style.display = 'none'; }
 
-document.getElementById('newPhotoBtn').onclick = () => {
-  if (!photoSectionId) return alert('请先在「展区管理」里点某个展区的「照片」按钮');
-  showPhotoForm();
-};
 document.getElementById('phCancel').onclick = hidePhotoForm;
 
 document.getElementById('phForm').addEventListener('submit', async e => {
   e.preventDefault();
-  if (!photoSectionId) return;
+  if (!activePhotoId) return;
   const imageFile = document.getElementById('p_image').files[0];
-  if (!activePhotoId && !imageFile) { alert('请选择图片'); return; }
   const body = {
     title: document.getElementById('p_title').value,
     location: document.getElementById('p_location').value,
@@ -209,9 +288,9 @@ document.getElementById('phForm').addEventListener('submit', async e => {
     try { body.image = await fileToDataUrl(imageFile); }
     catch (err) { alert('图片读取失败'); return; }
   }
-  const opts = { method: activePhotoId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
-  const url = activePhotoId ? `${api}/photos/${activePhotoId}` : `${api}/sections/${photoSectionId}/photos`;
-  const r = await apiFetch(url, opts);
+  const r = await apiFetch(`${api}/photos/${activePhotoId}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+  });
   if (r.ok) { hidePhotoForm(); loadPhotos(photoSectionId); }
   else { const d = await r.json().catch(() => ({})); alert(d.error || '保存失败'); }
 });
@@ -223,4 +302,5 @@ async function delPhoto(id) {
   if (r.ok) loadPhotos(photoSectionId);
 }
 
+setupUploadZone();
 init();
