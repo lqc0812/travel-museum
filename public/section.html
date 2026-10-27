@@ -24,16 +24,32 @@
     <div><a class="admin-link" href="admin.html">管理入口</a></div>
   </footer>
 
-  <!-- 大图灯箱 -->
-  <div class="lightbox" id="lb">
-    <button class="lb-close" id="lbClose" aria-label="关闭">×</button>
-    <button class="lb-prev" id="lbPrev" aria-label="上一张">‹</button>
-    <button class="lb-next" id="lbNext" aria-label="下一张">›</button>
-    <img id="lbImg" src="" alt="">
-    <div class="lb-caption">
-      <div class="t" id="lbTitle"></div>
-      <div class="m" id="lbMeta"></div>
+  <!-- 大图查看器 -->
+  <div class="lightbox" id="lb" role="dialog" aria-modal="true">
+    <div class="lb-topbar">
+      <div class="lb-counter" id="lbCounter">1 / 1</div>
+      <div class="lb-tools">
+        <button class="lb-tool" id="lbZoomOut" aria-label="缩小" title="缩小">−</button>
+        <button class="lb-tool" id="lbZoomReset" aria-label="重置缩放" title="适应屏幕">⤢</button>
+        <button class="lb-tool" id="lbZoomIn" aria-label="放大" title="放大">+</button>
+        <button class="lb-tool" id="lbFull" aria-label="全屏" title="全屏">⛶</button>
+        <button class="lb-tool" id="lbClose" aria-label="关闭" title="关闭 (Esc)">×</button>
+      </div>
     </div>
+    <button class="lb-nav lb-prev" id="lbPrev" aria-label="上一张">‹</button>
+    <button class="lb-nav lb-next" id="lbNext" aria-label="下一张">›</button>
+    <div class="lb-stage" id="lbStage">
+      <img id="lbImg" src="" alt="" draggable="false">
+    </div>
+    <div class="lb-caption" id="lbCaption">
+      <div class="t" id="lbTitle"></div>
+      <div class="meta">
+        <span id="lbLoc" class="tag"></span>
+        <span id="lbDate" class="tag"></span>
+      </div>
+      <div class="d" id="lbDesc"></div>
+    </div>
+    <div class="lb-strip" id="lbStrip"></div>
   </div>
 
   <script src="js/section.js"></script>

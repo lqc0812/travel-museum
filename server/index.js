@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3000;
 fs.mkdirSync(uploadsDir, { recursive: true });
 
 // 静态资源：前端页面 + 本地上传的图片；JSON 请求体上限放宽以容纳 base64 图片
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '25mb' }));
 app.use('/uploads', express.static(uploadsDir));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
@@ -31,6 +31,12 @@ function requireAuth(req, res, next) {
 /* ============ 公开接口（访客无需登录） ============ */
 
 app.get('/api/sections', (req, res) => res.json(db.listSections()));
+
+// 重排展区顺序（必须放在 /api/sections/:id 之前，避免被 :id 路由拦截）
+app.put('/api/sections/reorder', requireAuth, (req, res) => {
+  db.reorderSections(req.body.orderedIds || []);
+  res.json({ ok: true });
+});
 
 app.get('/api/sections/:id', (req, res) => {
   const row = db.getSection(Number(req.params.id));
@@ -144,6 +150,37 @@ app.delete('/api/photos/:id', requireAuth, async (req, res) => {
     db.deletePhoto(Number(req.params.id));
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 批量删除照片
+app.post('/api/photos/batch-delete', requireAuth, async (req, res) => {
+  try {
+    const { ids } = req.body || {};
+    if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: '请选择要删除的照片' });
+    const results = [];
+    for (const id of ids) {
+      const p = db.getPhoto(Number(id));
+      if (p) { await deleteImage(p.image_path); db.deletePhoto(Number(id)); results.push(Number(id)); }
+    }
+    res.json({ ok: true, deleted: results });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 重排某展区内照片顺序
+app.put('/api/sections/:id/reorder-photos', requireAuth, (req, res) => {
+  const ok = db.reorderPhotos(Number(req.params.id), req.body.orderedIds || []);
+  if (!ok) return res.status(404).json({ error: '展区不存在' });
+  res.json({ ok: true });
+});
+
+// 用某张照片作为展区封面
+app.post('/api/sections/:id/set-cover', requireAuth, (req, res) => {
+  const { photoId } = req.body || {};
+  const p = db.getPhoto(Number(photoId));
+  if (!p) return res.status(404).json({ error: '照片不存在' });
+  const s = db.setSectionCover(Number(req.params.id), p.image_path);
+  if (!s) return res.status(404).json({ error: '展区不存在' });
+  res.json(s);
 });
 
 // 启动：先载入数据（R2 或本地），再监听端口

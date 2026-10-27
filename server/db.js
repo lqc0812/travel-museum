@@ -136,8 +136,40 @@ function deletePhoto(id) {
   return p;
 }
 
+// 重排某展区内照片顺序：传入该展区照片 id 的有序数组
+function reorderPhotos(sectionId, orderedIds) {
+  const sec = getSection(sectionId);
+  if (!sec) return null;
+  (orderedIds || []).map(Number).forEach((id, idx) => {
+    const p = data.photos.find(x => x.id === id && x.section_id === sectionId);
+    if (p) p.sort_order = idx + 1;
+  });
+  save();
+  return true;
+}
+
+// 重排展区顺序：传入展区 id 的有序数组
+function reorderSections(orderedIds) {
+  (orderedIds || []).map(Number).forEach((id, idx) => {
+    const s = getSection(id);
+    if (s) s.sort_order = idx + 1;
+  });
+  save();
+  return true;
+}
+
+// 用某张照片的图作为展区封面
+function setSectionCover(sectionId, imagePath) {
+  const s = getSection(sectionId);
+  if (!s) return null;
+  s.cover_image = imagePath;
+  save();
+  return s;
+}
+
 module.exports = {
   init,
   listSections, getSection, createSection, updateSection, deleteSection,
-  listPhotos, getPhoto, createPhoto, updatePhoto, deletePhoto
+  listPhotos, getPhoto, createPhoto, updatePhoto, deletePhoto,
+  reorderPhotos, reorderSections, setSectionCover
 };
