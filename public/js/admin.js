@@ -35,6 +35,35 @@ function fileToDataUrl(file) {
   });
 }
 
+// 把图片压缩到最长边 maxDim，输出 JPEG dataURL（体积更小，上传更快）
+function resizeDataUrl(dataUrl, maxDim) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      try { resolve(c.toDataURL('image/jpeg', 0.85)); }
+      catch (e) { reject(new Error('图片处理失败')); }
+    };
+    img.onerror = () => reject(new Error('图片解码失败'));
+    img.src = dataUrl;
+  });
+}
+
+// 同一张原图生成「原图(2000) + 缩略图(600)」两份，分别用于大图查看器与网格
+async function makeImages(file) {
+  const dataUrl = await fileToDataUrl(file);
+  const [full, thumb] = await Promise.all([
+    resizeDataUrl(dataUrl, 2000),
+    resizeDataUrl(dataUrl, 600)
+  ]);
+  return { full, thumb };
+}
+
 /* ===== 登录 / 启动 ===== */
 async function init() {
   if (getToken()) {
@@ -242,8 +271,12 @@ document.getElementById('phForm').addEventListener('submit', async e => {
     description: document.getElementById('p_desc').value
   };
   if (imageFile) {
-    try { body.image = await fileToDataUrl(imageFile); }
-    catch (err) { alert('图片读取失败'); return; }
+    try {
+      const { full, thumb } = await makeImages(imageFile);
+      body.image = full;
+      body.thumb = thumb;
+    }
+    catch (err) { alert('图片处理失败'); return; }
   }
   const opts = { method: activePhotoId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
   const url = activePhotoId ? `${api}/photos/${activePhotoId}` : `${api}/sections/${photoSectionId}/photos`;

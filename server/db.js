@@ -114,6 +114,7 @@ function createPhoto(o) {
     shot_date: o.shot_date || null,
     description: o.description || null,
     image_path: o.image_path,
+    thumb_path: o.thumb_path || null,
     sort_order: o.sort_order || 0,
     created_at: new Date().toISOString()
   };
@@ -158,11 +159,12 @@ function reorderSections(orderedIds) {
   return true;
 }
 
-// 用某张照片的图作为展区封面
-function setSectionCover(sectionId, imagePath) {
+// 用某张照片的图作为展区封面（同时记录缩略图，首页网格更快）
+function setSectionCover(sectionId, imagePath, thumbPath) {
   const s = getSection(sectionId);
   if (!s) return null;
   s.cover_image = imagePath;
+  s.cover_thumb = thumbPath || null;
   save();
   return s;
 }

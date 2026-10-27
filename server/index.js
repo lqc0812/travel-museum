@@ -3,7 +3,7 @@ const fs = require('fs');
 const os = require('os');
 const express = require('express');
 const db = require('./db');
-const { saveImage, deleteImage } = require('./storage');
+const { saveImage, saveThumb, deleteImage } = require('./storage');
 const { uploadsDir, useR2, runtimeDir } = require('./config');
 const { verifyPassword, signToken, verifyToken } = require('./auth');
 
@@ -107,15 +107,17 @@ app.delete('/api/sections/:id', requireAuth, async (req, res) => {
 // 向某展区上传照片（image 为 base64，必填）
 app.post('/api/sections/:id/photos', requireAuth, async (req, res) => {
   try {
-    const { title, location, shot_date, description, sort_order, image } = req.body || {};
+    const { title, location, shot_date, description, sort_order, image, thumb } = req.body || {};
     if (!image) return res.status(400).json({ error: '请选择图片' });
     const section = db.getSection(Number(req.params.id));
     if (!section) return res.status(404).json({ error: '展区不存在' });
     const image_path = await saveImage(image);
+    const thumb_path = thumb ? await saveThumb(thumb) : null;
     const row = db.createPhoto({
       section_id: Number(req.params.id),
       title: title || null, location: location || null, shot_date: shot_date || null,
-      description: description || null, image_path, sort_order: sort_order ? parseInt(sort_order) : 0
+      description: description || null, image_path, thumb_path,
+      sort_order: sort_order ? parseInt(sort_order) : 0
     });
     res.json(row);
   } catch (e) { res.status(400).json({ error: e.message }); }
@@ -126,15 +128,22 @@ app.put('/api/photos/:id', requireAuth, async (req, res) => {
   try {
     const p = db.getPhoto(Number(req.params.id));
     if (!p) return res.status(404).json({ error: '照片不存在' });
-    const { title, location, shot_date, description, sort_order, image } = req.body || {};
+    const { title, location, shot_date, description, sort_order, image, thumb } = req.body || {};
     let image_path = p.image_path;
-    if (image) { await deleteImage(p.image_path); image_path = await saveImage(image); }
+    let thumb_path = p.thumb_path;
+    if (image) {
+      await deleteImage(p.image_path);
+      if (p.thumb_path) await deleteImage(p.thumb_path);
+      image_path = await saveImage(image);
+      thumb_path = thumb ? await saveThumb(thumb) : null;
+    }
     const patch = {
       title: title !== undefined ? title : p.title,
       location: location !== undefined ? location : p.location,
       shot_date: shot_date !== undefined ? shot_date : p.shot_date,
       description: description !== undefined ? description : p.description,
       image_path,
+      thumb_path,
       sort_order: sort_order !== undefined ? parseInt(sort_order) : p.sort_order,
     };
     res.json(db.updatePhoto(Number(req.params.id), patch));
@@ -147,6 +156,7 @@ app.delete('/api/photos/:id', requireAuth, async (req, res) => {
     const p = db.getPhoto(Number(req.params.id));
     if (!p) return res.status(404).json({ error: '照片不存在' });
     await deleteImage(p.image_path);
+    if (p.thumb_path) await deleteImage(p.thumb_path);
     db.deletePhoto(Number(req.params.id));
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -160,7 +170,7 @@ app.post('/api/photos/batch-delete', requireAuth, async (req, res) => {
     const results = [];
     for (const id of ids) {
       const p = db.getPhoto(Number(id));
-      if (p) { await deleteImage(p.image_path); db.deletePhoto(Number(id)); results.push(Number(id)); }
+      if (p) { await deleteImage(p.image_path); if (p.thumb_path) await deleteImage(p.thumb_path); db.deletePhoto(Number(id)); results.push(Number(id)); }
     }
     res.json({ ok: true, deleted: results });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -178,7 +188,7 @@ app.post('/api/sections/:id/set-cover', requireAuth, (req, res) => {
   const { photoId } = req.body || {};
   const p = db.getPhoto(Number(photoId));
   if (!p) return res.status(404).json({ error: '照片不存在' });
-  const s = db.setSectionCover(Number(req.params.id), p.image_path);
+  const s = db.setSectionCover(Number(req.params.id), p.image_path, p.thumb_path);
   if (!s) return res.status(404).json({ error: '展区不存在' });
   res.json(s);
 });

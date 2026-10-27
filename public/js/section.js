@@ -31,7 +31,7 @@ async function init() {
     if (photos.length) {
       grid.innerHTML = photos.map((p, i) => `
         <div class="photo-card" data-i="${i}">
-          <div class="photo-thumb"><img src="${p.image_path}" alt="${esc(p.title || '')}" loading="lazy"></div>
+          <div class="photo-thumb"><img src="${p.thumb_path || p.image_path}" alt="${esc(p.title || '')}" loading="lazy" decoding="async"></div>
           <div class="photo-cap">
             <div class="t">${esc(p.title || '未命名')}</div>
             <div class="m">${[p.location, p.shot_date].filter(Boolean).join(' · ')}</div>
@@ -89,7 +89,7 @@ function setZoom(z) {
 function updateStrip() {
   const strip = document.getElementById('lbStrip');
   strip.innerHTML = photos.map((p, i) =>
-    `<button class="lb-thumb ${i === current ? 'active' : ''}" data-i="${i}"><img src="${p.image_path}" alt=""></button>`
+    `<button class="lb-thumb ${i === current ? 'active' : ''}" data-i="${i}"><img src="${p.thumb_path || p.image_path}" alt="" loading="lazy"></button>`
   ).join('');
   strip.querySelectorAll('.lb-thumb').forEach(b =>
     b.addEventListener('click', () => { current = +b.dataset.i; zoom = 1; renderLb(); }));

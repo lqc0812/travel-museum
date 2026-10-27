@@ -47,4 +47,20 @@ async function deleteImage(ref) {
   }
 }
 
-module.exports = { saveImage, deleteImage };
+// 保存缩略图（网格用，体积更小），返回可访问地址。命名以 thumb- 前缀区分。
+async function saveThumb(dataUrl) {
+  const { ext, buf } = decodeDataUrl(dataUrl);
+  const fname = `thumb-${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${ext}`;
+  if (useR2) {
+    const { PutObjectCommand } = require('@aws-sdk/client-s3');
+    await s3.send(new PutObjectCommand({
+      Bucket: r2.bucket, Key: `uploads/${fname}`, Body: buf, ContentType: `image/${ext}`
+    }));
+    return `${r2.publicUrl}/uploads/${fname}`;
+  }
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  fs.writeFileSync(path.join(uploadsDir, fname), buf);
+  return `/uploads/${fname}`;
+}
+
+module.exports = { saveImage, saveThumb, deleteImage };

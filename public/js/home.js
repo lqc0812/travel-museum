@@ -93,7 +93,7 @@ function hallCard(s) {
   const meta = [s.location, s.year].filter(Boolean).join(' · ');
   return `
     <a class="hall" href="section.html?id=${s.id}">
-      <div class="hall-cover">${s.cover_image ? `<img src="${s.cover_image}" alt="${esc(s.title)}" loading="lazy">` : ''}</div>
+      <div class="hall-cover">${s.cover_image ? `<img src="${s.cover_thumb || s.cover_image}" alt="${esc(s.title)}" loading="lazy" decoding="async">` : ''}</div>
       <div class="hall-body">
         <h3 class="hall-title">${esc(s.title)}</h3>
         <div class="hall-meta">${esc(meta)}</div>
